@@ -17,7 +17,8 @@
 package com.google.samples.apps.nowinandroid.feature.bookmarks
 
 import com.google.samples.apps.nowinandroid.core.domain.GetUserNewsResourcesUseCase
-import com.google.samples.apps.nowinandroid.core.model.data.previewNewsResources
+import com.google.samples.apps.nowinandroid.core.model.data.NewsResource
+import com.google.samples.apps.nowinandroid.core.testing.data.getNewsResourcesTestData
 import com.google.samples.apps.nowinandroid.core.testing.repository.TestNewsRepository
 import com.google.samples.apps.nowinandroid.core.testing.repository.TestUserDataRepository
 import com.google.samples.apps.nowinandroid.core.testing.util.MainDispatcherRule
@@ -47,6 +48,7 @@ class BookmarksViewModelTest {
         newsRepository = newsRepository,
         userDataRepository = userDataRepository
     )
+    private val newsResourcesTestData: List<NewsResource> = getNewsResourcesTestData()
     private lateinit var viewModel: BookmarksViewModel
 
     @Before
@@ -66,8 +68,10 @@ class BookmarksViewModelTest {
     fun oneBookmark_showsInFeed() = runTest {
         val collectJob = launch(UnconfinedTestDispatcher()) { viewModel.feedUiState.collect() }
 
-        newsRepository.sendNewsResources(previewNewsResources)
-        userDataRepository.updateNewsResourceBookmark(previewNewsResources[0].id, true)
+        val newsResources: List<NewsResource> = getNewsResourcesTestData()
+
+        newsRepository.sendNewsResources(newsResources)
+        userDataRepository.updateNewsResourceBookmark(newsResources[0].id, true)
         val item = viewModel.feedUiState.value
         assertIs<Success>(item)
         assertEquals(item.feed.size, 1)
@@ -79,11 +83,11 @@ class BookmarksViewModelTest {
     fun oneBookmark_whenRemoving_removesFromFeed() = runTest {
         val collectJob = launch(UnconfinedTestDispatcher()) { viewModel.feedUiState.collect() }
         // Set the news resources to be used by this test
-        newsRepository.sendNewsResources(previewNewsResources)
+        newsRepository.sendNewsResources(newsResourcesTestData)
         // Start with the resource saved
-        userDataRepository.updateNewsResourceBookmark(previewNewsResources[0].id, true)
+        userDataRepository.updateNewsResourceBookmark(newsResourcesTestData[0].id, true)
         // Use viewModel to remove saved resource
-        viewModel.removeFromSavedResources(previewNewsResources[0].id)
+        viewModel.removeFromSavedResources(newsResourcesTestData[0].id)
         // Verify list of saved resources is now empty
         val item = viewModel.feedUiState.value
         assertIs<Success>(item)
